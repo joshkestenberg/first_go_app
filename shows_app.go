@@ -44,23 +44,25 @@ func showsArtistYearHandler(w http.ResponseWriter, r *http.Request){
   }
 }
 
-func showsCreateHandler(w http.ResponseWriter, r *http.Request){
-  params := mux.Vars(r)
-  yearParam, _ := strconv.Atoi(params["year"])
-  monthParam, _ := strconv.Atoi(params["month"])
-  dayParam, _ := strconv.Atoi(params["day"])
+func newHandler(w http.ResponseWriter, r *http.Request){
+  fmt.Fprintf(w, "<h1>New Show</h1><form action='/shows' method='POST'><input type='text' name='artist' placeholder='artist'><br>year<input type='number' name='year' min='1950' max='2020'><br>month<input type='number' name='month' min='1' max='12'><br>day<input type='number' name='day' min='1' max='31'><br><input type='text' name='city' placeholder='city'><br><input type='text' name='venue' placeholder='venue'><br><input type='submit'></form>")
+}
+
+func saveHandler(w http.ResponseWriter, r *http.Request){
+  r.ParseForm()
+  fmt.Println()
 
   var s Show
-  s.artist = params["artist"]
-  s.year = yearParam
-  s.month = monthParam
-  s.day = dayParam
-  s.city = params["city"]
-  s.venue = params["venue"]
+  s.artist = r.Form["artist"][0]
+  s.year, _ = strconv.Atoi(r.Form["year"][0])
+  s.month, _ = strconv.Atoi(r.Form["month"][0])
+  s.day, _ = strconv.Atoi(r.Form["day"][0])
+  s.city = r.Form["city"][0]
+  s.venue = r.Form["venue"][0]
 
   shows = append(shows, s)
 
-  http.Redirect(w, r, "localhost:8000/shows", 301)
+  http.Redirect(w, r, "/shows", 301)
 }
 
 func main() {
@@ -72,7 +74,8 @@ func main() {
   r.HandleFunc("/shows", showsHandler).Methods("GET")
   r.HandleFunc("/shows/{artist}", showsArtistHandler).Methods("GET")
   r.HandleFunc("/shows/{artist}/{year}", showsArtistYearHandler).Methods("GET")
-  r.HandleFunc("/shows/{artist}/{year}/{month}/{day}/{city}/{venue}", showsCreateHandler).Methods("POST")
+  r.HandleFunc("/new", newHandler).Methods("GET")
+  r.HandleFunc("/shows", saveHandler).Methods("POST")
 
   log.Fatal(http.ListenAndServe(":8000", r))
 }
