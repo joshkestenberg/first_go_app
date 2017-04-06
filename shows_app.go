@@ -22,25 +22,25 @@ var allShows = make(map[string][]Show)
 
 func showsHandler(w http.ResponseWriter, r *http.Request){
   for _, item := range allShows{
-    for _, item := range item{
-      fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div>",item.artist, item.year, item.month, item.day, item.city, item.venue)
+    for i, item := range item{
+      fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div><a href='/delete/%s/%v/%v/%v/%s/%s/%v'>delete</a></div>", item.artist, item.year, item.month, item.day, item.city, item.venue, item.artist, item.year, item.month, item.day, item.city, item.venue, i)
     }
   }
 }
 
 func showsArtistHandler(w http.ResponseWriter, r *http.Request){
   params := mux.Vars(r)
-  for _, item := range allShows[strings.Title(params["artist"])]{
-    fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div>",item.artist, item.year, item.month, item.day, item.city, item.venue)
+  for i, item := range allShows[strings.Title(params["artist"])]{
+    fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div><a href='/delete/%s/%v/%v/%v/%s/%s/%v'>delete</a></div>", item.artist, item.year, item.month, item.day, item.city, item.venue, item.artist, item.year, item.month, item.day, item.city, item.venue, i)
   }
 }
 
 func showsArtistYearHandler(w http.ResponseWriter, r *http.Request){
   params := mux.Vars(r)
   yearParam, _ := strconv.Atoi(params["year"])
-  for _, item := range allShows[strings.Title(params["artist"])]{
+  for i, item := range allShows[strings.Title(params["artist"])]{
     if item.year == yearParam {
-      fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div>",item.artist, item.year, item.month, item.day, item.city, item.venue)
+      fmt.Fprintf(w, "<h1>%s</h1><div>%v/%v/%v</div><div>%s</div><div>%s</div><a href='/delete/%s/%v/%v/%v/%s/%s/%v'>delete</a></div>", item.artist, item.year, item.month, item.day, item.city, item.venue, item.artist, item.year, item.month, item.day, item.city, item.venue, i)
     }
   }
 }
@@ -66,6 +66,25 @@ func saveHandler(w http.ResponseWriter, r *http.Request){
   http.Redirect(w, r, "/shows", 301)
 }
 
+//
+
+func deleteHandler(w http.ResponseWriter, r *http.Request){
+  params := mux.Vars(r)
+  yearParam, _ := strconv.Atoi(params["year"])
+  monthParam, _ := strconv.Atoi(params["month"])
+  dayParam, _ := strconv.Atoi(params["day"])
+  i, _ := strconv.Atoi(params["i"])
+
+  for _, item := range allShows[strings.Title(params["artist"])]{
+    if item.year == yearParam && item.month == monthParam && item.day == dayParam && item.city == params["city"] && item.venue == params["venue"]{
+      allShows[params["artist"]][i] = allShows[params["artist"]][len(allShows[params["artist"]])-1]
+      allShows[params["artist"]] = allShows[params["artist"]][:len(allShows[params["artist"]])-1]
+    }
+  }
+  
+  http.Redirect(w, r, "/shows", 301)
+}
+
 func main() {
   r := mux.NewRouter()
   allShows["Phish"] = append(allShows["Phish"], Show{artist: "Phish", year: 2017, month: 4, day: 20, city: "Guelph", venue: "Up Your Friggin Dick"})
@@ -77,6 +96,7 @@ func main() {
   r.HandleFunc("/shows/{artist}/{year}", showsArtistYearHandler).Methods("GET")
   r.HandleFunc("/new", newHandler).Methods("GET")
   r.HandleFunc("/shows", saveHandler).Methods("POST")
+  r.HandleFunc("/delete/{artist}/{year}/{month}/{day}/{city}/{venue}/{i}", deleteHandler).Methods("GET")
 
   log.Fatal(http.ListenAndServe(":8000", r))
 }
